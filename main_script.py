@@ -35,7 +35,7 @@ def get_operations_list(tk):
 
     for i in range(1, 31):
         req = requests.get(
-            url=f'https://api.digiseller.ru/api/sellers/account/receipts?token={tk}&page={i}&count=200&currency=WMZ&codeFilter=hide_waiting_code_check&allowType=exclude&start=2021-12-01T00:00:00.000&finish={time.strftime("%Y-%m-%d" + "T" + "%H:%M:%S" + ".000", time.gmtime())}',
+            url=f'https://api.digiseller.ru/api/sellers/account/receipts?token={tk}&page={i}&count=200&currency=WMZ&codeFilter=hide_waiting_code_check&allowType=exclude&start=2021-12-01T00:00:00.000&finish={time.strftime("%Y-%m-%d" + "T" + "%H:%M:%S" + ".000", time.localtime())}',
             headers=headers
         )
         if not req:
