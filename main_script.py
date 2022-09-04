@@ -56,11 +56,11 @@ def get_statistics_list(tk):
 
     statistics_list = []
 
-    for i in range(3):
+    for i in range(100):
         statistics_json_request = {
             "token": tk,
             "date_start": "2017-01-01 00:00:00",
-            "date_finish": time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()),
+            "date_finish": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
             "returned": 0,
             "page": i,
             "rows": 2000
