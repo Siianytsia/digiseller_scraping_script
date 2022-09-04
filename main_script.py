@@ -251,7 +251,7 @@ def main():
         statistics_sheet()
         operations_sheet()
 
-        time.sleep(600)
+        time.sleep(300)
 
 
 if __name__ == '__main__':
