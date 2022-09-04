@@ -104,37 +104,18 @@ def get_products_list(tk):
 
 
 # получение конечного списка с операциями
-def get_result_list(rows):
+def get_operations_result_list(rows):
     result_list = []
-
-    types_dict = {
-        'external_commission': 'комиссия при оплате через интеграторов',
-        'transfer_to_wallet': 'вывод средств на кошелёк',
-        'error_transfer_to_wallet': 'вывод средств на кошелёк (ошибка)',
-        'issue_gift_certificate': 'выпуск подарочной карты',
-        'hard_disk_rent': 'арена дополнительного места',
-        'refund': 'возврат',
-        'chargeback': 'возврат',
-        'bank_refund': 'возврат',
-        'partial_refund': 'частичный возврат',
-        'external_agent_accruals': 'агентские начисления',
-        'product_sale': 'продажа товара',
-        'add_funds_to_account': 'пополнение личного счета',
-        'add_funds_to_account_with_limits': 'пополнение личного счета',
-        'recommended_product': 'реклама',
-        'extra_agent_product_rent': 'увеличение количества товаров в агентском магазине',
-        'sms_packages': 'покупка СМС пакета для уведомлений',
-        'hard_disk_rent_empty': 'увеличение места на жестком диске',
-        'exchange_request': 'перевод на обмен',
-        'exchange_response': 'получение средств из обмена'
-    }
 
     for row in rows:
         for item in row:
             operation = item.get('operation')
             result_list.append(
                 {
-                    'Тип операции': types_dict[operation.get('type')],
+                    'ID операции': operation.get('id'),
+                    'Тип операции': operation.get('type'),
+                    'ID товара': item.get('product').get('id') if item.get(
+                        'product') is not None else '',
                     'Название': item.get('product').get('name')[0].get('value') if item.get(
                         'product') is not None else '',
                     'Дата': f"{operation.get('datetime').split('T')[0].split('-')[2]}.{operation.get('datetime').split('T')[0].split('-')[1]}.{operation.get('datetime').split('T')[0].split('-')[0]}",
@@ -151,6 +132,16 @@ def get_result_list(rows):
 # получение конечного списка со статистикой по каждому продукту
 def get_result_statistics_list(rows):
     result_list = []
+
+    curr_dict = {
+        'WMZ': 'USD',
+        'WMR': 'RUB',
+        'WME': 'EUR',
+        'WMU': 'UAH',
+        'WML': 'LTC',
+        'WMX': 'BTC'
+    }
+
     for row in rows:
         for item in row:
             result_list.append(
@@ -163,7 +154,8 @@ def get_result_statistics_list(rows):
                     'Покупатель': item.get('email'),
                     'Способ оплаты': item.get('aggregator_pay'),
                     'Оплачено': item.get('amount_in'),
-                    'Зачислено': item.get('amount_out')
+                    'Зачислено': item.get('amount_out'),
+                    'Валюта': curr_dict[item.get('amount_currency')]
                 }
             )
 
@@ -203,10 +195,10 @@ def products_info_sheet():
     products_result_list = get_products_info(products)
 
     # загрузка информации в google sheets
-    sa = gspread.service_account(filename='gspread\service_account.json')
+    sa = gspread.service_account(filename='gspread/service_account.json')
     sh = sa.open('DiggisellerInfoBook')
 
-    wks = sh.worksheet('products_info_sheet')
+    wks = sh.worksheet('Сводная')
 
     lst = [[product.get('Оплата'), product.get('ID товара'), product.get('Название товара'), product.get('Площадка'),
             product.get('Цена'), product.get('Продано'), product.get('Содержимое')] for product
@@ -222,41 +214,45 @@ def statistics_sheet():
     result = get_result_statistics_list(statistics_rows)
 
     # запись данных в google sheets
-    sa = gspread.service_account(filename='gspread\service_account.json')
+    sa = gspread.service_account(filename='gspread/service_account.json')
     sh = sa.open('DiggisellerInfoBook')
 
-    wks = sh.worksheet('statistics_sheet')
+    wks = sh.worksheet('Продажи')
 
     lst = [[product.get('ID товара'), product.get('Название'), product.get('Площадка'), product.get('Дата'),
             product.get('Время'), product.get('Покупатель'), product.get('Способ оплаты'), product.get('Оплачено'),
-            product.get('Зачислено')] for product in result]
+            product.get('Зачислено'), product.get('Валюта')] for product in result]
 
-    wks.update(f'A2:I{len(lst) + 1}', lst[::-1])
+    wks.update(f'A2:J{len(lst) + 1}', lst[::-1])
 
 
 # загрузка в operations_sheet
 def operations_sheet():
     token = get_token()
     op_list = get_operations_list(token)
-    result = get_result_list(op_list)
+    result = get_operations_result_list(op_list)
 
     # запись данных в google sheets
-    sa = gspread.service_account(filename='gspread\service_account.json')
+    sa = gspread.service_account(filename='gspread/service_account.json')
     sh = sa.open('DiggisellerInfoBook')
 
-    wks = sh.worksheet('operations_sheet')
+    wks = sh.worksheet('Операции')
 
-    lst = [[operation.get('Тип операции'), operation.get('Название'), operation.get('Дата'),
+    lst = [[operation.get('ID операции'), operation.get('Тип операции'), operation.get('ID товара'), operation.get('Название'), operation.get('Дата'),
             operation.get('Время'), operation.get('Сумма'), operation.get('Комиссия'), operation.get('На баланс')]
            for operation in result]
 
-    wks.update(f'A2:G{len(lst) + 1}', lst[1:])
+    wks.update(f'A2:I{len(lst) + 1}', lst[1:])
 
 
-if __name__ == '__main__':
+def main():
     while True:
         products_info_sheet()
         statistics_sheet()
         operations_sheet()
 
-        time.sleep(900)
+        time.sleep(600)
+
+
+if __name__ == '__main__':
+    main()
