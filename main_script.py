@@ -56,7 +56,7 @@ def get_statistics_list(tk):
 
     statistics_list = []
 
-    for i in range(100):
+    for i in range(10):
         statistics_json_request = {
             "token": tk,
             "date_start": "2017-01-01 00:00:00",
